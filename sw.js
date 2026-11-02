@@ -134,7 +134,7 @@ self.addEventListener("activate", (event) => {
 
       await Promise.all(
         keys.map((key) => {
-          if (!key.startsWith(CACHE_PREFIX)) return caches.delete(key);
+          if (!key.startsWith(CACHE_PREFIX)) return undefined;
           if (key === CACHE_NAME) return undefined;
           if (keep.has(key)) return undefined;
           return caches.delete(key);
@@ -158,6 +158,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(req.url);
   if (!isSameOrigin(url)) return;
+  // Leave the separate shift-schedule app and its own worker untouched.
+  if (url.pathname === "/shift-schedule-duo" || url.pathname.startsWith("/shift-schedule-duo/")) return;
 
   const accept = req.headers.get("accept") || "";
   const isNavigation = req.mode === "navigate" || accept.includes("text/html");
@@ -177,3 +179,4 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 });
+

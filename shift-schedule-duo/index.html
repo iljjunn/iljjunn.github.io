@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base href="/shift-schedule-duo/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="내 교대근무표, 메모와 급여 기록을 한곳에서 관리하세요.">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="교대근무표">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.json">
+  <title>교대근무표</title>
+  <style>
+    html, body { margin: 0; width: 100%; height: 100%; background: #FFFFFF; color: #1C2430; }
+    #flutter-host { position: absolute; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px); bottom: env(safe-area-inset-bottom, 0px); left: env(safe-area-inset-left, 0px); overflow: hidden; }
+    #loading { position: fixed; inset: 0; display: grid; place-content: center; gap: 12px; padding: 24px; text-align: center; font: 16px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; }
+    #loading h1 { font-size: 24px; margin: 0; }
+    #loading p { margin: 0; }
+    #retry { color: #155BA4; text-underline-offset: 4px; }
+  </style>
+</head>
+<body>
+  <div id="flutter-host"></div>
+  <main id="loading" aria-live="polite">
+    <h1>교대근무표</h1>
+    <p id="loading-message">근무표를 불러오는 중입니다.</p>
+    <a id="retry" href="." hidden>다시 열기</a>
+  </main>
+  <noscript>교대근무표를 사용하려면 브라우저의 JavaScript를 켜주세요.</noscript>
+  <script src="viewport.js"></script>
+  <script src="app.js"></script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
