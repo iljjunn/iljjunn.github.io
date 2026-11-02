@@ -1,7 +1,7 @@
 'use strict';
 
 // Filled by tool/prepare_pwa.mjs after Flutter's release build.
-const VERSION = '54ae1b45e90afd4c';
+const VERSION = '59ea2159d02930f9';
 const FILES = ["app.js","assets/AssetManifest.bin","assets/AssetManifest.bin.json","assets/FontManifest.json","assets/NOTICES","assets/assets/fonts/NotoSansKR.ttf","assets/assets/fonts/OFL.txt","assets/fonts/MaterialIcons-Regular.otf","assets/packages/cupertino_icons/assets/CupertinoIcons.ttf","assets/shaders/ink_sparkle.frag","assets/shaders/stretch_effect.frag","canvaskit/canvaskit.js","canvaskit/canvaskit.wasm","canvaskit/chromium/canvaskit.js","canvaskit/chromium/canvaskit.wasm","favicon.png","flutter_bootstrap.js","icons/Icon-192.png","icons/Icon-512.png","icons/Icon-maskable-192.png","icons/Icon-maskable-512.png","index.html","main.dart.js","manifest.json","viewport.js"];
 const PREFIX = `shift-schedule:${self.registration.scope}:`;
 const CACHE = PREFIX + VERSION;

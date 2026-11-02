@@ -1,5 +1,50 @@
 "use strict";
 
+// Embedded Flutter measures its host and does not report keyboard insets.
+// Keep that host in the visible viewport without rebuilding Flutter or its state.
+const viewportHost = document.getElementById('flutter-host');
+const visibleViewport = window.visualViewport;
+if (viewportHost && visibleViewport) {
+  let framePending = false;
+  let lastHeight;
+  let recoveryUntil = Date.now() + 1500;
+  const beginRotation = () => {
+    recoveryUntil = Date.now() + 1500;
+    scheduleHeight();
+  };
+  const syncHeight = () => {
+    framePending = false;
+    if (Math.abs(visibleViewport.scale - 1) > 0.01) return;
+    const height = visibleViewport.height;
+    if (!Number.isFinite(height) || height <= 0) return;
+    if (height !== lastHeight) {
+      lastHeight = height;
+      viewportHost.style.setProperty('--shift-viewport-height', `${height}px`);
+    }
+    // iOS standalone can retain a negative portrait scroll offset after rotation.
+    // Repair that measured mismatch once; never reset normal scroll or keyboard panning.
+    const standalone = navigator.standalone === true || window.matchMedia?.('(display-mode: standalone)').matches;
+    if (standalone && Date.now() <= recoveryUntil && window.scrollY < -1 &&
+        visibleViewport.offsetTop < -1 && height > document.documentElement.clientHeight + 1) {
+      recoveryUntil = 0;
+      window.scrollTo(window.scrollX, 0);
+    }
+  };
+  const scheduleHeight = () => {
+    if (!framePending) {
+      framePending = true;
+      window.requestAnimationFrame(syncHeight);
+    }
+  };
+  visibleViewport.addEventListener('resize', scheduleHeight);
+  visibleViewport.addEventListener('scroll', scheduleHeight);
+  window.addEventListener('resize', scheduleHeight);
+  window.addEventListener('orientationchange', beginRotation);
+  window.addEventListener('pageshow', beginRotation);
+  syncHeight();
+}
+
+
 // Coordinates are relative to the safe-area host, in CSS pixels, not hardware pixels.
 window.shiftViewport = {
   read() {
@@ -66,10 +111,13 @@ if (typeof location !== 'undefined' && new URLSearchParams(location.search).get(
       inner: [innerWidth, innerHeight], outer: [outerWidth, outerHeight],
       screen: [screen.width, screen.height],
       document: [document.documentElement.clientWidth, document.documentElement.clientHeight],
+      scroll: [scrollX, scrollY, document.documentElement.scrollTop, document.body.scrollTop],
+      body: rect(document.body),
       visual: visualViewport ? [visualViewport.width, visualViewport.height, visualViewport.offsetLeft, visualViewport.offsetTop, visualViewport.scale] : null,
       cssWidths: {'100%':rect(percent).width,'100vw':rect(vw).width,'100dvw':rect(dvw).width},
       safeTRBL: [css.paddingTop,css.paddingRight,css.paddingBottom,css.paddingLeft],
       host: rect(document.getElementById('flutter-host')),
+      hostCss: (() => { const c = getComputedStyle(document.getElementById('flutter-host')); return [c.position,c.top,c.bottom,c.height]; })(),
       flutterSizePaddingTRBLViewInsetsTRBL: state.flutter,
     };
     output.textContent = Object.entries(state.snapshot).map(([key, value]) => key + ': ' + JSON.stringify(value)).join('\n');

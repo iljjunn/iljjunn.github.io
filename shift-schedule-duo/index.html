@@ -16,7 +16,7 @@
   <title>교대근무표</title>
   <style>
     html, body { margin: 0; width: 100%; height: 100%; background: #FFFFFF; color: #1C2430; }
-    #flutter-host { position: absolute; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px); bottom: env(safe-area-inset-bottom, 0px); left: env(safe-area-inset-left, 0px); overflow: hidden; }
+    #flutter-host { position: fixed; top: env(safe-area-inset-top, 0px); right: env(safe-area-inset-right, 0px); height: calc(var(--shift-viewport-height, 100%) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); left: env(safe-area-inset-left, 0px); overflow: hidden; }
     #loading { position: fixed; inset: 0; display: grid; place-content: center; gap: 12px; padding: 24px; text-align: center; font: 16px/1.6 -apple-system, BlinkMacSystemFont, sans-serif; }
     #loading h1 { font-size: 24px; margin: 0; }
     #loading p { margin: 0; }
