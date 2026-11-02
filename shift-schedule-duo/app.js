@@ -1,21 +1,75 @@
 'use strict';
 
+// Never use ServiceWorkerContainer.ready: it can already be resolved to TripGrid.
+const shiftScope = new URL('/shift-schedule-duo/', window.location.origin).href;
+const shiftWorkerURL = new URL('sw.js', shiftScope).href;
+let shiftRegistration;
+
+function registerShiftWorker() {
+  if (!shiftRegistration) {
+    shiftRegistration = navigator.serviceWorker.register(shiftWorkerURL, {scope: shiftScope})
+      .catch(error => {
+        shiftRegistration = null; // Allow a later status check to retry a failed registration.
+        throw error;
+      });
+  }
+  return shiftRegistration;
+}
+
 window.shiftFiles = {
   async offlineReady() {
     if (!('serviceWorker' in navigator)) return false;
     return new Promise(resolve => {
-      const channel = new MessageChannel();
+      let done = false;
+      let registration;
+      let channel;
+      let responseTimeout;
+      let checking = false;
+      const workers = new Set();
       const finish = ready => {
+        if (done) return;
+        done = true;
         clearTimeout(timeout);
-        channel.port1.close();
+        clearTimeout(responseTimeout);
+        registration?.removeEventListener('updatefound', check);
+        for (const worker of workers) worker.removeEventListener('statechange', check);
+        channel?.port1.close();
+        channel?.port2.close();
         resolve(ready === true);
       };
+      const check = () => {
+        if (done || checking) return;
+        for (const worker of [registration.installing, registration.waiting, registration.active]) {
+          if (worker && !workers.has(worker)) {
+            workers.add(worker);
+            worker.addEventListener('statechange', check);
+          }
+        }
+        const worker = registration.active;
+        if (workers.size && [...workers].every(candidate => candidate.state === 'redundant')) {
+          return finish(false);
+        }
+        // active may still be activating. Wait for install and activate waitUntil work.
+        if (worker?.state !== 'activated') return;
+        if (worker.scriptURL !== shiftWorkerURL) return finish(false);
+        checking = true;
+        try {
+          channel = new MessageChannel();
+          responseTimeout = setTimeout(() => finish(false), 3000);
+          channel.port1.onmessage = event => finish(event.data?.ready);
+          channel.port1.onmessageerror = () => finish(false);
+          // Query the exact registration, even if the page's controller is still TripGrid.
+          worker.postMessage({type: 'OFFLINE_STATUS'}, [channel.port2]);
+        } catch (_) { finish(false); }
+      };
+      // One bound covers registration, installation, activation and the status reply.
       const timeout = setTimeout(() => finish(false), 30000);
-      channel.port1.onmessage = event => finish(event.data?.ready);
-      navigator.serviceWorker.ready.then(registration => {
-        // A live worker alone does not prove its offline files still exist.
-        if (!registration.active) return finish(false);
-        registration.active.postMessage({type: 'OFFLINE_STATUS'}, [channel.port2]);
+      registerShiftWorker().then(result => {
+        if (done) return;
+        if (result.scope !== shiftScope) return finish(false);
+        registration = result;
+        registration.addEventListener('updatefound', check);
+        check();
       }).catch(() => finish(false));
     });
   },
@@ -52,7 +106,7 @@ window.shiftFiles = {
 window.addEventListener('flutter-first-frame', () => {
   document.getElementById('loading')?.remove();
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {
+    registerShiftWorker().catch(() => {
       // The app remains usable online when storage or service workers are disabled.
     });
   }
